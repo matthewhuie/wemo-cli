@@ -1,0 +1,16 @@
+#!/bin/bash
+
+PORT=`nmap -p 49000-50000 $1 | grep open | tail -1 | cut -d\/ -f1`
+
+if [[ $PORT == "" ]]; then
+  echo "ERROR"
+  exit 1
+else
+  XML=`curl -silent http://$1:$PORT/setup.xml`
+  echo "Name: `echo $XML | grep -oPm1 '(?<=<friendlyName>)[^<]+'`"
+  echo "Model: `echo $XML | grep -oPm1 '(?<=<modelName>)[^<]+'`"
+  echo "Status: `echo $XML | grep -oPm1 '(?<=<binaryState>)[^<]+'`"
+  echo "IP Address: $1"
+  echo "MAC Address: `echo $XML | grep -oPm1 '(?<=<macAddress>)[^<]+'`"
+  echo "Serial Number: `echo $XML | grep -oPm1 '(?<=<serialNumber>)[^<]+'`"
+fi
