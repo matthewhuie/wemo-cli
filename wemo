@@ -89,5 +89,7 @@ if [[ $# == 2 ]]; then
   esac
 else
   echo "Usage: wemo <IP address of Belkin WeMo Switch> <command>"
+  echo
+  echo "Valid commands: status  on  off"
   exit 1
 fi
