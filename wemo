@@ -20,10 +20,22 @@ if [[ $# == 2 ]]; then
         </s:Body>
       </s:Envelope>'
       ) | sed -n 's/<BinaryState>\(.\)<\/BinaryState>/\1/p'`
+    SIGNAL=`(curl -A '' -X POST \
+      -H 'Content-type: text/xml; charset="utf-8"' \
+      -H 'SOAPACTION: "urn:Belkin:service:basicevent:1#GetSignalStrength"' \
+      -s http://$1:$PORT/upnp/control/basicevent1 \
+      --data '<?xml version="1.0" encoding="utf-8"?>
+        <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+          <u:GetSignalStrength xmlns:u="urn:Belkin:service:basicevent:1"/>
+        </s:Body>
+      </s:Envelope>'
+      ) | sed -n 's/<SignalStrength>\(.*\)<\/SignalStrength>/\1/p'`
     echo "Name: `echo $XML | grep -oPm1 '(?<=<friendlyName>)[^<]+'`"
     echo "Model: `echo $XML | grep -oPm1 '(?<=<modelName>)[^<]+'`"
     echo "Status: $STATE"
     echo "IP Address: $1"
+    echo "Signal Strength: $SIGNAL"
     echo "MAC Address: `echo $XML | grep -oPm1 '(?<=<macAddress>)[^<]+'`"
     echo "Serial Number: `echo $XML | grep -oPm1 '(?<=<serialNumber>)[^<]+'`"
   ;;
