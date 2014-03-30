@@ -9,7 +9,7 @@ if [[ $# == 2 ]]; then
   case $2 in
   status)
     XML=`curl -silent http://$1:$PORT/setup.xml`
-    STATE=`(curl -A '' -X POST \
+    STATE=`curl -A '' -X POST \
       -H 'Content-type: text/xml; charset="utf-8"' \
       -H 'SOAPACTION: "urn:Belkin:service:basicevent:1#GetBinaryState"' \
       -s http://$1:$PORT/upnp/control/basicevent1 \
@@ -18,9 +18,8 @@ if [[ $# == 2 ]]; then
         <s:Body>
           <u:GetBinaryState xmlns:u="urn:Belkin:service:basicevent:1"/>
         </s:Body>
-      </s:Envelope>'
-      ) | sed -n 's/<BinaryState>\(.\)<\/BinaryState>/\1/p'`
-    SIGNAL=`(curl -A '' -X POST \
+      </s:Envelope>'`
+    SIGNAL=`curl -A '' -X POST \
       -H 'Content-type: text/xml; charset="utf-8"' \
       -H 'SOAPACTION: "urn:Belkin:service:basicevent:1#GetSignalStrength"' \
       -s http://$1:$PORT/upnp/control/basicevent1 \
@@ -29,13 +28,12 @@ if [[ $# == 2 ]]; then
         <s:Body>
           <u:GetSignalStrength xmlns:u="urn:Belkin:service:basicevent:1"/>
         </s:Body>
-      </s:Envelope>'
-      ) | sed -n 's/<SignalStrength>\(.*\)<\/SignalStrength>/\1/p'`
+      </s:Envelope>'`
     echo "Name: `echo $XML | grep -oPm1 '(?<=<friendlyName>)[^<]+'`"
     echo "Model: `echo $XML | grep -oPm1 '(?<=<modelName>)[^<]+'`"
-    echo "Status: $STATE"
+    echo "Status: `if [[ $(echo $STATE | grep -oPm1 '(?<=<BinaryState>)[^<]+') -eq 0 ]]; then echo off; else echo on; fi`"
     echo "IP Address: $1"
-    echo "Signal Strength: $SIGNAL"
+    echo "Signal Strength: `echo $SIGNAL | grep -oPm1 '(?<=<SignalStrength>)[^<]+'`%"
     echo "MAC Address: `echo $XML | grep -oPm1 '(?<=<macAddress>)[^<]+'`"
     echo "Serial Number: `echo $XML | grep -oPm1 '(?<=<serialNumber>)[^<]+'`"
   ;;
