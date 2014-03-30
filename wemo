@@ -1,16 +1,13 @@
 #!/bin/bash
 
-if [[ $# != 1 ]]; then
-  echo "Usage: wemo < IP address of Belkin WeMo Switch >"
-  exit 1
-else
-  
+if [[ $# == 2 ]]; then
   PORT=`nmap -p 49000-50000 $1 | grep open | tail -1 | cut -d\/ -f1`
-  
   if [[ $PORT == "" ]]; then
-    echo "ERROR"
+    echo "Error: $1 is not a Belkin WeMo Switch"
     exit 1
-  else
+  fi
+  case $2 in
+  status)
     XML=`curl -silent http://$1:$PORT/setup.xml`
     echo "Name: `echo $XML | grep -oPm1 '(?<=<friendlyName>)[^<]+'`"
     echo "Model: `echo $XML | grep -oPm1 '(?<=<modelName>)[^<]+'`"
@@ -18,5 +15,42 @@ else
     echo "IP Address: $1"
     echo "MAC Address: `echo $XML | grep -oPm1 '(?<=<macAddress>)[^<]+'`"
     echo "Serial Number: `echo $XML | grep -oPm1 '(?<=<serialNumber>)[^<]+'`"
-  fi
+  ;;
+  on)
+    curl -A '' -X POST \
+      -H 'Content-type: text/xml; charset="utf-8"' \
+      -H 'SOAPACTION: "urn:Belkin:service:basicevent:1#SetBinaryState"' \
+      -s http://$1:$PORT/upnp/control/basicevent1 \
+      -o /dev/null \
+      --data '<?xml version="1.0" encoding="utf-8"?>
+        <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+          <s:Body>
+            <u:SetBinaryState xmlns:u="urn:Belkin:service:basicevent:1">
+              <BinaryState>1</BinaryState>
+            </u:SetBinaryState>
+          </s:Body>
+        </s:Envelope>'
+  ;;
+  off)
+    curl -A '' -X POST \
+      -H 'Content-type: text/xml; charset="utf-8"' \
+      -H 'SOAPACTION: "urn:Belkin:service:basicevent:1#SetBinaryState"' \
+      -s http://$1:$PORT/upnp/control/basicevent1 \
+      -o /dev/null \
+      --data '<?xml version="1.0" encoding="utf-8"?>
+        <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+          <s:Body>
+            <u:SetBinaryState xmlns:u="urn:Belkin:service:basicevent:1">
+              <BinaryState>0</BinaryState>
+            </u:SetBinaryState>
+          </s:Body>
+        </s:Envelope>'
+  ;;
+  *)
+    echo "Error: $2 is not a valid command"
+  ;;
+  esac
+else
+  echo "Usage: wemo <IP address of Belkin WeMo Switch> <command>"
+  exit 1
 fi
