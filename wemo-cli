@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ $# == 2 ]]; then
+if [[ $# > 1 ]]; then
   PORT=`nmap -p 49000-50000 $1 | grep open | tail -1 | cut -d\/ -f1`
   if [[ $PORT == "" ]]; then
     echo "Error: $1 is not a Belkin WeMo Switch"
@@ -31,7 +31,7 @@ if [[ $# == 2 ]]; then
       </s:Envelope>'`
     echo "Name: `echo $XML | grep -oPm1 '(?<=<friendlyName>)[^<]+'`"
     echo "Model: `echo $XML | grep -oPm1 '(?<=<modelName>)[^<]+'`"
-    echo "Status: `if [[ $(echo $STATE | grep -oPm1 '(?<=<BinaryState>)[^<]+') -eq 0 ]]; then echo off; else echo on; fi`"
+    echo "Status: `echo $STATE | grep -oPm1 '(?<=<BinaryState>)[^<]+' | sed 's/0/OFF/' | sed 's/1/ON/'`"
     echo "IP Address: $1"
     echo "Signal Strength: `echo $SIGNAL | grep -oPm1 '(?<=<SignalStrength>)[^<]+'`%"
     echo "MAC Address: `echo $XML | grep -oPm1 '(?<=<macAddress>)[^<]+'`"
@@ -67,20 +67,21 @@ if [[ $# == 2 ]]; then
           </s:Body>
         </s:Envelope>'
   ;;
-#  rename)
-#    curl -A '' -X POST \
-#      -H 'Content-type: text/xml; charset="utf-8"' \
-#      -H 'SOAPACTION: "urn:Belkin:service:basicevent:1#ChangeFriendlyName"' \
-#      -s http://$1:$PORT/upnp/control/basicevent1 \
-#      -o /dev/null \
-#      --data '<?xml version="1.0" encoding="utf-8"?>
-#        <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-#          <s:Body>
-#            <u:ChangeFriendlyName xmlns:u="urn:Belkin:service:basicevent:1">
-#              <FriendlyName>$3</FriendlyName>
-#            </u:ChangeFriendlyName>
-#          </s:Body>
-#  ;;
+  rename)
+    curl -A '' -X POST \
+      -H 'Content-type: text/xml; charset="utf-8"' \
+      -H 'SOAPACTION: "urn:Belkin:service:basicevent:1#ChangeFriendlyName"' \
+      -s http://$1:$PORT/upnp/control/basicevent1 \
+      -o /dev/null \
+      --data '<?xml version="1.0" encoding="utf-8"?>
+        <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+          <s:Body>
+            <u:ChangeFriendlyName xmlns:u="urn:Belkin:service:basicevent:1">
+              <FriendlyName>Front Light</FriendlyName>
+            </u:ChangeFriendlyName>
+          </s:Body>
+        </s:Envelope>'
+  ;;
   *)
     echo "Error: $2 is not a valid command"
   ;;
@@ -88,6 +89,6 @@ if [[ $# == 2 ]]; then
 else
   echo "Usage: wemo <IP address of Belkin WeMo Switch> <command>"
   echo
-  echo "Valid commands: status  on  off"
+  echo "Valid commands: status  on  off  rename"
   exit 1
 fi
